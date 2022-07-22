@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httputil"
@@ -34,7 +35,10 @@ type (
 		PrevSecret string
 		Callback   UnauthorizedCallback
 	}
-
+	AuthorizResponseData struct {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+	}
 	// UnauthorizedCallback defines the method of unauthorized callback.
 	UnauthorizedCallback func(w http.ResponseWriter, r *http.Request, err error)
 	// AuthorizeOption defines the method to customize an AuthorizeOptions.
@@ -118,5 +122,16 @@ func unauthorized(w http.ResponseWriter, r *http.Request, err error, callback Un
 	}
 
 	// if user not setting HTTP header, we set header with 401
-	writer.WriteHeader(http.StatusUnauthorized)
+	writer.WriteHeader(http.StatusOK)
+
+	resp := AuthorizResponseData{
+		Code: 401,
+		Msg:  "Unauthorized",
+	}
+	respJson, err := json.Marshal(resp)
+	if err != nil {
+		logx.Errorf("json marshal failed")
+	}
+	writer.Header().Set("Content-Type", "application-json")
+	writer.Write(respJson)
 }
